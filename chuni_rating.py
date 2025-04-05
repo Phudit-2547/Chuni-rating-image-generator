@@ -22,6 +22,10 @@ async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
+        await context.tracing.start(
+            title="chuni_trace", screenshots=True, snapshots=True, sources=True
+        )
+
         upload_page = await context.new_page()
 
         # --- Step 1: Login and Download ---
@@ -76,7 +80,8 @@ async def main():
                 data = {"content": "Here is the generated image:"}
                 response = requests.post(DISCORD_WEBHOOK, data=data, files=files)
                 print(f"Discord response: {response.status_code}")
-
+        
+        await context.tracing.stop(path="trace.zip")
         await browser.close()
 
 if __name__ == "__main__":

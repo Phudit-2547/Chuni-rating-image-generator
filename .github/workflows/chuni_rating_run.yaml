@@ -1,0 +1,41 @@
+# .github/workflows/chuni_rating_run.yaml
+
+name: Run Chunithm Data Extractor
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps
+
+      - name: 🔐 Create .env from secrets
+        run: |
+          echo "USERNAME=${{ secrets.USERNAME }}" >> .env
+          echo "PASSWORD=${{ secrets.PASSWORD }}" >> .env
+          echo "DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}" >> .env
+
+      - name: ▶️ Run script
+        run: python chuni_rating.py
+
+      - name: 📤 Upload Playwright trace
+        if: always()  # Upload trace even if script fails
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-trace
+          path: trace.zip
