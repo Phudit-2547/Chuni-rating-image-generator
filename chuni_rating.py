@@ -84,7 +84,7 @@ async def main():
                     "content": "Your Best 30 Songs is here!",
                 }
                 data = json.dumps(message)
-                response = requests.post(DISCORD_WEBHOOK, data=data, files=files)
+                response = requests.post(DISCORD_WEBHOOK, data=data, files=files,headers={"Content-Type": "application/json"})
                 print(f"Discord response: {response.status_code}")
         
         await context.tracing.stop(path="trace.zip")
