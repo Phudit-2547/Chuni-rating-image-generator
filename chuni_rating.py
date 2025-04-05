@@ -3,6 +3,7 @@ import base64
 import requests
 from envparse import env
 from playwright.async_api import async_playwright
+import json
 
 env.read_envfile()
 
@@ -77,7 +78,12 @@ async def main():
                 image_bytes = base64.b64decode(b64data)
 
                 files = {"file": (f"result_image.{ext}", image_bytes, mime)}
-                data = {"content": "Here is the generated image:"}
+                message = {
+                    "username": "みのりん",
+                    "avatar_url": "https://pbs.twimg.com/media/FiyzOadaAAAX-yG?format=jpg&name=large",
+                    "content": "Your Best 30 Songs is here!",
+                }
+                data = json.dumps(message)
                 response = requests.post(DISCORD_WEBHOOK, data=data, files=files)
                 print(f"Discord response: {response.status_code}")
         
