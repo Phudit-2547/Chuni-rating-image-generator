@@ -78,15 +78,15 @@ async def main():
                 image_bytes = base64.b64decode(b64data)
 
                 files = {"file": (f"result_image.{ext}", image_bytes, mime)}
-                message = {
+                payload = {
                     "username": "みのりん",
                     "avatar_url": "https://pbs.twimg.com/media/FiyzOadaAAAX-yG?format=jpg&name=large",
                     "content": "Your Best 30 Songs is here!",
                 }
-                data = json.dumps(message)
-                response = requests.post(DISCORD_WEBHOOK, data=data, files=files,headers={"Content-Type": "application/json"})
+                data = {"payload_json": json.dumps(payload)}
+                response = requests.post(DISCORD_WEBHOOK, data=data, files=files)
                 print(f"Discord response: {response.status_code}")
-        
+
         await context.tracing.stop(path="trace.zip")
         await browser.close()
 
