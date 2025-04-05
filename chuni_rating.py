@@ -20,7 +20,7 @@ javascript:(function(){var e=document.createElement("script");e.src="https://rei
 
 async def main():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.chromium.launch(headless=True)
         context = await browser.new_context()
         await context.tracing.start(
             title="chuni_trace", screenshots=True, snapshots=True, sources=True
