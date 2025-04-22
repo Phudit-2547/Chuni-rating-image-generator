@@ -12,22 +12,17 @@ DISCORD_WEBHOOK = env("DISCORD_WEBHOOK")
 USERNAME = env("USERNAME")
 PASSWORD = env("PASSWORD")
 
-
-UPLOAD_PAGE_URL = "https://reiwa.f5.si/newbestimg/chunithm_int/"
-
 INJECT_SCRIPT = """
 javascript:(function(){var e=document.createElement("script");e.src="https://reiwa.f5.si/chuni_scoredata/main.js?"+String(Math.floor((new Date).getTime()/1e3)),document.body.appendChild(e)})();
 """
 
 async def main():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=False)
         context = await browser.new_context()
         await context.tracing.start(
             title="chuni_trace", screenshots=True, snapshots=True, sources=True
         )
-
-        upload_page = await context.new_page()
 
         # --- Step 1: Login and Download ---
         page = await context.new_page()
@@ -39,34 +34,27 @@ async def main():
         await page.locator("input#btnSubmit.c-button--login").click()
         await page.wait_for_url("https://chunithm-net-eng.com/mobile/home/", wait_until="domcontentloaded")
 
-        print("✅ Login successful, injecting script...")
+        print("✅ Login successful, injecting script…")
         await page.evaluate(INJECT_SCRIPT)
 
-        try:
-            download = await page.wait_for_event("download", timeout=30000)
-        except Exception as e:
-            await browser.close()
-            raise ValueError(f"❌ Download did not start: {e}")
+        # 1️⃣ Wait for the “Completed!” popup to appear
+        await page.wait_for_selector("text=Completed!", timeout=60000)
 
-        json_filename = download.suggested_filename
-        print(f"📂 Download triggered. Suggested filename: {json_filename}")
-        await download.save_as(json_filename)
-        print(f"📂 JSON data saved as {json_filename}")
+        # 2️⃣ Click the “CHUNITHM Best Songs Image Generator NEW” link
+        #    but *catch the popup* it opens:
+        async with page.expect_popup() as popup_info:
+            await page.click("text=CHUNITHM Best Songs Image Generator NEW")
+        generator_page = await popup_info.value
 
-        print("📤 Uploading JSON file...")
-        await upload_page.goto(UPLOAD_PAGE_URL, wait_until="domcontentloaded")
+        # 3️⃣ Wait for the generator page to load fully must be at least 5 seconds
+        await asyncio.sleep(5)
 
-        await asyncio.sleep(
-            5
-        )  # Wait for the page to load for 5 seconds(must be at least 5 seconds)
-        await upload_page.locator("#player_data_file").set_input_files(json_filename)
+        # 4️⃣ Click the generate button in that page
+        await generator_page.click("#generate")
+        print("✅ Generate button clicked in generator page!")
 
-        # Click "Generate"
-        await upload_page.locator("#generate").click()
-        print("✅ Generate button clicked!")
-
-        # Get Image
-        img_src = await upload_page.locator("#result-img").get_attribute("src")
+        # 5️⃣ Now extract the result image from that page
+        img_src = await generator_page.locator("#result-img").get_attribute("src")
 
         # Send to Discord
         if img_src:
