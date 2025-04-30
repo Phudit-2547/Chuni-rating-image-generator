@@ -69,7 +69,6 @@ async def main():
                 payload = {
                     "username": "みのりん",
                     "avatar_url": "https://pbs.twimg.com/media/FiyzOadaAAAX-yG?format=jpg&name=large",
-                    "content": "Your Best 30 Songs is here!",
                 }
                 data = {"payload_json": json.dumps(payload)}
                 response = requests.post(DISCORD_WEBHOOK, data=data, files=files)
